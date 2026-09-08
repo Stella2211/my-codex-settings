@@ -1,0 +1,9 @@
+My Codex settings
+
+This project includes a modified prompt from OpenAI Codex:
+OpenAI Codex
+Copyright 2025 OpenAI
+
+The derived file is model-instructions-long-waits.md, licensed under the
+Apache License, Version 2.0. See LICENSE and UPSTREAM.md for the source
+revision and local modifications.

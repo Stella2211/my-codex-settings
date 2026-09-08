@@ -22,7 +22,3 @@ disable_on_external_context = false
 [mcp_servers.agent-browser]
 command = "agent-browser"
 args = ["mcp"]
-
-[mcp_servers.freee_mcp]
-url = "https://mcp.freee.co.jp/mcp"
-startup_timeout_sec = 120

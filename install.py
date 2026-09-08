@@ -35,10 +35,19 @@ ALLOWED_KEYS = {
     "mcp_servers",
 }
 ALLOWED_MCP_SERVERS = {"agent-browser", "freee_mcp"}
+WINDOWS_CONFIG_OVERRIDES = {
+    "approval_policy": "on-request",
+    "approvals_reviewer": "auto_review",
+    "sandbox_mode": "danger-full-access",
+}
 
 
 class InstallerError(RuntimeError):
     pass
+
+
+def is_windows() -> bool:
+    return os.name == "nt"
 
 
 def source_dir() -> Path:
@@ -143,7 +152,11 @@ def atomic_write(path: Path, data: str, mode: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
-        os.fchmod(fd, mode)
+        # Windows does not expose fchmod.  chmod after replacement is best
+        # effort there, while POSIX retains the restrictive temporary mode.
+        fchmod = getattr(os, "fchmod", None)
+        if fchmod is not None:
+            fchmod(fd, mode)
         with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
             stream.write(data)
             stream.flush()
@@ -197,11 +210,11 @@ def run_agent_browser_install() -> str:
     if shutil.which("bun") is None:
         raise InstallerError("bun is required for agent-browser; install bun or use --skip-agent-browser")
     try:
-        subprocess.run(["bun", "add", "--global", "agent-browser"], check=True)
+        subprocess.run(["bun", "add", "--global", "agent-browser"], check=True, shell=is_windows())
         resolved = shutil.which("agent-browser")
         if resolved is None:
             raise InstallerError("agent-browser was installed but is not on PATH; add Bun's global bin directory to PATH")
-        subprocess.run([resolved, "install"], check=True)
+        subprocess.run([resolved, "install"], check=True, shell=is_windows())
     except subprocess.CalledProcessError as exc:
         raise InstallerError(f"agent-browser installation failed (exit {exc.returncode})") from exc
     resolved = shutil.which("agent-browser")
@@ -229,6 +242,9 @@ def install(args: argparse.Namespace) -> int:
     agents = update_agents(existing_agents, read_source(required[1]))
     model = read_source(required[2])
     config = merged_config(source_config, existing_config)
+    if is_windows():
+        for key, value in WINDOWS_CONFIG_OVERRIDES.items():
+            config[key] = value
     config["model_instructions_file"] = str(model_path)
 
     if args.dry_run:

@@ -23,9 +23,9 @@ class InstallerTests(unittest.TestCase):
             (home / 'AGENTS.md').write_text('Keep my local guidance.\n')
             with contextlib.redirect_stdout(io.StringIO()):
                 install.install(self.args(home))
-                first = {name: (home / name).read_text() for name in ['AGENTS.md', 'config.toml']}
+                first = {name: (home / name).read_text(encoding="utf-8") for name in ['AGENTS.md', 'config.toml']}
                 install.install(self.args(home))
-            self.assertEqual(first, {name: (home / name).read_text() for name in first})
+            self.assertEqual(first, {name: (home / name).read_text(encoding="utf-8") for name in first})
             config = tomlkit.parse(first['config.toml'])
             self.assertTrue(config['features']['multi_agent_v2']['enabled'])
             self.assertEqual(config['features']['multi_agent_v2']['min_wait_timeout_ms'], 120000)
@@ -34,10 +34,11 @@ class InstallerTests(unittest.TestCase):
             self.assertIn('Keep my local guidance.', first['AGENTS.md'])
             self.assertEqual(first['AGENTS.md'].count(install.BEGIN_MARKER), 1)
             self.assertEqual(config['model_instructions_file'], str(home.resolve() / 'model-instructions-long-waits.md'))
-            self.assertEqual((home / 'config.toml').stat().st_mode & 0o777, 0o600)
+            if not install.is_windows():
+                self.assertEqual((home / 'config.toml').stat().st_mode & 0o777, 0o600)
             backups = list((home / install.BACKUP_DIR_NAME).glob('*/config.toml'))
             self.assertEqual(len(backups), 2)
-            self.assertIn(original, [p.read_text() for p in backups])
+            self.assertIn(original, [p.read_text(encoding="utf-8") for p in backups])
 
     def test_fresh_dry_run_does_not_create_target(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -54,7 +55,7 @@ class InstallerTests(unittest.TestCase):
             (home / 'AGENTS.md').write_text(original)
             with self.assertRaises(install.InstallerError):
                 install.install(self.args(home, dry=True))
-            self.assertEqual((home / 'AGENTS.md').read_text(), original)
+            self.assertEqual((home / 'AGENTS.md').read_text(encoding="utf-8"), original)
             self.assertFalse((home / 'config.toml').exists())
 
     def test_inline_table_preserves_unrelated_settings(self):
@@ -66,9 +67,40 @@ class InstallerTests(unittest.TestCase):
         tomlkit.parse(tomlkit.dumps(result))
 
     def test_browser_uses_resolved_command(self):
-        with patch.object(install.shutil, 'which', side_effect=lambda name: '/bin/bun' if name == 'bun' else '/bin/agent-browser'), patch.object(install.subprocess, 'run') as run:
+        with patch.object(install, 'is_windows', return_value=False), patch.object(install.shutil, 'which', side_effect=lambda name: '/bin/bun' if name == 'bun' else '/bin/agent-browser'), patch.object(install.subprocess, 'run') as run:
             self.assertEqual(install.run_agent_browser_install(), '/bin/agent-browser')
             self.assertEqual(run.call_args_list[1].args[0], ['/bin/agent-browser', 'install'])
+            self.assertFalse(run.call_args_list[0].kwargs['shell'])
+
+    def test_windows_uses_full_access_settings(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(install, 'is_windows', return_value=True):
+            home = Path(tmp)
+            with contextlib.redirect_stdout(io.StringIO()):
+                install.install(self.args(home))
+            config = tomlkit.parse((home / 'config.toml').read_text(encoding="utf-8"))
+            self.assertEqual(config['sandbox_mode'], 'danger-full-access')
+            self.assertEqual(config['approval_policy'], 'on-request')
+            self.assertEqual(config['approvals_reviewer'], 'auto_review')
+
+    def test_windows_skips_unavailable_fchmod(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(install.os, 'fchmod', None, create=True):
+            path = Path(tmp) / 'config.toml'
+            install.atomic_write(path, 'value = true\n', 0o600)
+            self.assertEqual(path.read_text(encoding="utf-8"), 'value = true\n')
+
+    def test_windows_browser_commands_use_shell(self):
+        with patch.object(install, 'is_windows', return_value=True), patch.object(install.shutil, 'which', side_effect=lambda name: 'C:\\bin\\bun.exe' if name == 'bun' else 'C:\\bin\\agent-browser.cmd'), patch.object(install.subprocess, 'run') as run:
+            self.assertEqual(install.run_agent_browser_install(), 'C:\\bin\\agent-browser.cmd')
+            self.assertTrue(run.call_args_list[0].kwargs['shell'])
+            self.assertTrue(run.call_args_list[1].kwargs['shell'])
+
+    def test_posix_keeps_workspace_sandbox(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(install, 'is_windows', return_value=False):
+            home = Path(tmp)
+            with contextlib.redirect_stdout(io.StringIO()):
+                install.install(self.args(home))
+            config = tomlkit.parse((home / 'config.toml').read_text(encoding="utf-8"))
+            self.assertEqual(config['sandbox_mode'], 'workspace-write')
 
 
 if __name__ == '__main__':

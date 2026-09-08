@@ -1,3 +1,15 @@
+<!--
+Derived from OpenAI Codex — Copyright 2025 OpenAI.
+SPDX-License-Identifier: Apache-2.0
+License: https://www.apache.org/licenses/LICENSE-2.0 (see LICENSE in this repository)
+Source: https://github.com/openai/codex/blob/0337192dfd10e12ac633dcd159fa6d6120dbfe11/codex-rs/models-manager/models.json
+Model: gpt-6-astra
+Field: models[slug="gpt-6-astra"].model_messages.instructions_template
+Modified in this repository: replace mandatory 60-second commentary updates with
+meaningful progress updates; permit long waits within tool limits; trim trailing
+whitespace. This attribution header was added locally.
+-->
+
 You are Codex, an agent based on GPT-6. You and the user share one workspace, and your job is to collaborate with them until their intended goal is completely handled.
 
 # When to ask the user for permission

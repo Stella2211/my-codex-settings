@@ -1,87 +1,71 @@
 # My Codex settings
 
-個人用 Codex 設定を複数の環境で共有するリポジトリ。Codex 0.153.4 の設定を元に作成しています。
+複数の環境で使える Codex 設定です。共有設定の既定値はモデル `gpt-6-astra`、推論 effort `low`、sandbox `workspace-write` です。モデルの利用可否はアカウントや環境に依存します。`AGENTS.md` には、必要な作業を Luna（`gpt-5.6-luna`）へ委譲する方針を含みますが、委譲機能やモデルの利用を保証するものではありません。
 
 ## セットアップ
 
-事前に Git、Codex、uv、Bun をインストールしてください。Codex のログインと各 MCP の認証は移行先で行います。モデルの利用可否は移行先のアカウントに依存します。
+事前に Git、Codex、[uv](https://docs.astral.sh/uv/)、Bun をインストールし、Codex にログインしてください。
+
+macOS / Linux：
 
 ```sh
-git clone <このリポジトリのURL> my-codex-settings
+git clone https://github.com/stella2211/my-codex-settings.git
 cd my-codex-settings
 ./install.sh --dry-run
 ./install.sh
-codex mcp login freee_mcp
 ```
 
-`install.sh` は uv 経由で Python と tomlkit を使います。初回は依存取得にネットワークが必要です。通常実行では Bun で agent-browser をインストールし、ブラウザ本体も取得します。Linux でブラウザのシステム依存が不足する場合は、`agent-browser install --with-deps` を別途実行してください。
+Windows（PowerShell）：
 
-既に agent-browser を管理している場合や、設定だけ反映したい場合：
-
-```sh
-./install.sh --skip-agent-browser
+```powershell
+git clone https://github.com/stella2211/my-codex-settings.git
+cd my-codex-settings
+.\install.ps1 --dry-run
+.\install.ps1
 ```
 
-別の Codex home に適用する場合：
+`install.sh` と `install.ps1` は uv 経由で `tomlkit==0.15.1` を取得してインストーラーを実行します。agent-browser の導入を省略する場合は、どちらにも `--skip-agent-browser` を渡してください。適用先は `--codex-home`、環境変数 `CODEX_HOME`、既定の `~/.codex`（Windows は `$HOME\.codex`）の順で決まります。
 
-```sh
-./install.sh --codex-home /absolute/path/to/codex-home
-```
+通常のインストールは Bun で agent-browser をグローバルに追加し、ブラウザ本体をダウンロードします。初回はネットワーク接続が必要です。適用後は Codex を再起動し、新しい会話で使用してください。適用先に `AGENTS.override.md` がある場合は、`AGENTS.md` より優先されるため内容を確認してください。
 
-適用先は `--codex-home`、環境変数 `CODEX_HOME`、`~/.codex` の順で決まります。適用後はアプリを再起動し、新規会話で読み込みを確認してください。
+## Windows の sandbox 回避策
 
-## 共有する内容
+Windows の Python でインストールすると、sandbox の動作が不安定な環境向けの暫定回避策として `approval_policy = "on-request"`、`approvals_reviewer = "auto_review"`、`sandbox_mode = "danger-full-access"` を自動適用します。環境の安定性を自動判定する機能はありません。macOS / Linux と WSL 内の Linux Python では `workspace-write` を使用します。
 
-| ファイル | 内容 |
-| --- | --- |
-| `config.toml` | モデル、パーミッション、メモリ機能、待機設定、agent-browser/freee MCP |
-| `AGENTS.md` | ネイティブ Luna への委譲、Bun/uv の利用、待機時間の決め方 |
-| `model-instructions-long-waits.md` | 基本指示の置き換え。60秒ごとの報告・待機制限を調整 |
+`danger-full-access` ではコマンドがワークスペース外のファイルを読み書きでき、意図しない変更・削除や機密情報へのアクセスのリスクがあります。承認設定はsandboxの隔離を代替しません。安定している環境では、適用後の `config.toml` を確認して `sandbox_mode = "workspace-write"` に戻してください。Windows で再度インストーラーを実行すると、回避策の値が再適用されます。
 
-設定は TOML のキー単位で既存ファイルへ再帰的にマージします。共有側にある値が優先され、共有側にない既存設定は残ります。既存の秘密情報を含む設定を表示しません。共有側からキーを削除しても、適用先のキーは削除しません。
+## 共有と更新
 
-AGENTS.md は管理対象のブロックとして挿入し、再実行時はそのブロックを更新します。既存のローカル指示は残します。モデル指示ファイルはコピーで更新し、`model_instructions_file` は適用先の絶対パスに設定します。変更前のファイルは適用先へバックアップします。
+共有するのは `config.toml`、`AGENTS.md`、`model-instructions-long-waits.md` です。認証情報、環境変数の秘密値、履歴、メモリ、信頼設定、キャッシュは含めません。`config.toml` は既存設定へキー単位で再帰的にマージし、共有側の値を優先します。共有側にない既存キーは残ります。`AGENTS.md` は管理ブロックだけを更新し、その他のローカル指示を残します。
 
-`AGENTS.override.md` があると同じ階層の `AGENTS.md` は読まれないため、移行先に存在する場合は内容を確認してください。プロジェクト固有の AGENTS.md と競合する指示はプロジェクト側が優先されます。
-
-## 待機設定
-
-- 最短・既定の待機時間：120秒。
-- AGENTS.md：推定残り時間の2倍を指定。不明なら既定時間を明示。
-- Codex 0.153.4 の最大待機時間は1時間。これは1回の待機の上限です。
-- `multi_agent_v2` の有効・無効は移行先の選択を維持します。この待機設定は V2 使用時に適用されます。CLI でも V2 を使う場合は、`[features.multi_agent_v2]` に `enabled = true` を追加してください。
-
-参考：[待機対策の投稿](https://x.com/u1/status/2096890699883123119)、[0.153.4 の待機実装](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs)。
-
-## Computer Use
-
-Computer Use は端末のアプリ・権限に依存するため、通常のインストーラーから分けています。対応する macOS のデスクトップアプリをインストールし、`openai-bundled` マーケットプレイスが利用できる状態で実行します。
-
-```sh
-./setup-computer-use.sh
-```
-
-このスクリプトは `codex plugin add` で `computer-use` と `unified-computer-use` を導入します。移行先の配布版でプラグインが提供されない場合はエラーになり、デスクトップアプリ側で利用可否を確認する必要があります。画面収録やアクセシビリティ等の許可はアプリの案内に従って設定してください。別 home を使う場合は同じ `CODEX_HOME` を環境に設定して実行してください。
-
-この環境の旧 `mcp_servers.computer-use`、`node_repl` の実行パスやプラグインキャッシュはコピーしません。Figma、Context7 等の他のプラグインは必要に応じて移行先で追加してください。
-
-## 更新と Git
+変更前の適用先ファイルは、適用先の `.codex-settings-backups/` にバックアップされます。更新するときは次のように実行してください。
 
 ```sh
 git pull
 ./install.sh --skip-agent-browser
 ```
 
-設定を変えるときは、このリポジトリのファイルを編集してコミットしてください。実際の `~/.codex/config.toml` を丸ごとコピーすると秘密情報や端末固有設定が混入するため、必要なキーだけを反映します。`model_instructions_file` は組み込み基本指示全体を置き換えるため、Codex 更新時には公式のモデル指示との差分を確認してください。
+Windows では `git pull` の後に `.\install.ps1 --skip-agent-browser` を実行します。
 
-認証情報、環境変数の秘密値、履歴、メモリ内容、プロジェクト信頼設定、アプリキャッシュ、スキルは共有しません。旧 delegate-luna スキルも含みません。
+## 待機設定
 
-GitHub 等のリモートは別途作成して登録します。このリポジトリの初期セットアップでは公開・push は行っていません。
+待機の最短値と既定値は 120 秒です。`AGENTS.md` の指示では、残り時間を見積もれる場合はその2倍を待機時間に指定し、見積もれない場合は既定値を明示します。
+
+この設定は `multi_agent_v2` 使用時に適用されます。有効・無効は既存設定を維持するため、必要に応じて `[features.multi_agent_v2]` に `enabled = true` を追加してください。実際の待機時間はツールの上限に従います。
+
+`model-instructions-long-waits.md` は組み込みの基本指示全体を置き換えます。定期報告を意味のある進捗報告に絞り、作業が進められない間の長時間待機を許容します。Codex の更新時は [上流プロンプト](UPSTREAM.md) との互換性を確認してください。
+
+## Computer Use（任意）
+
+macOS の ChatGPT デスクトップアプリで利用する場合は、ログイン済みの Codex から次を実行します。
 
 ```sh
-git remote add origin <privateリポジトリのURL>
-git push -u origin main
+./setup-computer-use.sh
 ```
+
+このスクリプトは `computer-use` と `unified-computer-use` プラグインを追加します。画面収録やアクセシビリティなどの権限は、アプリの案内に従って設定してください。
+
+`openai-bundled` マーケットプレイスで両プラグインを利用できる環境が必要です。
 
 ## 検証
 
@@ -89,4 +73,8 @@ git push -u origin main
 uv run --no-project --with tomlkit==0.15.1 python -m unittest -v
 ```
 
-一時ディレクトリで既存設定・コメント・認証値の保持、再実行、バックアップ、待機フラグの変換、dry-run を検証します。通常のインストールによるブラウザ取得と移行先での Computer Use 動作は、その環境で確認してください。
+## ライセンスと参照
+
+- [LICENSE](LICENSE) — Apache License 2.0
+- [NOTICE](NOTICE) — 著作権・帰属表示
+- [UPSTREAM.md](UPSTREAM.md) — 上流資料と由来
