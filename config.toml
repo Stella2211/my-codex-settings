@@ -1,0 +1,28 @@
+# Shared settings only. Machine-specific configuration and credentials stay local.
+model = "gpt-6-astra"
+model_reasoning_effort = "low"
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+service_tier = "default"
+
+[features]
+js_repl = false
+memories = true
+
+[features.multi_agent_v2]
+min_wait_timeout_ms = 120000
+default_wait_timeout_ms = 120000
+
+[memories]
+generate_memories = true
+use_memories = true
+disable_on_external_context = false
+
+[mcp_servers.agent-browser]
+command = "agent-browser"
+args = ["mcp"]
+
+[mcp_servers.freee_mcp]
+url = "https://mcp.freee.co.jp/mcp"
+startup_timeout_sec = 120
