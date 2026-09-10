@@ -4,13 +4,16 @@
 
 This policy applies to the primary agent. A sub-agent should complete its assigned scope without recursively delegating unless the primary explicitly requests it.
 
-- For every non-trivial task with a useful independent workstream, use native Codex sub-agents with model `gpt-5.6-luna`. After the minimum orientation needed to define scope and read applicable instructions, delegate before undertaking deep investigation or substantial implementation yourself. Do not finish the work locally and delegate a token review merely to satisfy this rule.
+- For every non-trivial task with a useful independent workstream, use sub-agents with model `gpt-5.6-luna`. After the minimum orientation needed to define scope and read applicable instructions, delegate before undertaking deep investigation or substantial implementation yourself.
 - The primary owns scope, priorities, architecture, tradeoffs, ambiguity resolution, integration, and final review. Delegate bounded research, code inspection, implementation within agreed boundaries, focused verification, and documentation to Luna. While Luna works, advance a complementary decision or independent workstream rather than duplicating its assignment.
-- Give each worker the objective, relevant context and files, permitted edit scope, constraints, expected deliverable, and acceptance criteria. Use the native tool's supported explicit model selection; supply self-contained context when selecting Luna requires a fresh context. Do not rely on the retired `delegate-luna` skill or an external CLI workaround.
+- Give each worker the objective, relevant context and files, permitted edit scope, constraints, expected deliverable, and acceptance criteria. Use the native tool's supported explicit model selection; supply self-contained context when selecting Luna requires a fresh context.
 - Assign disjoint edit ownership. Prefer reusing a suitable existing Luna worker over spawning another. Do not ask workers to recursively create more workers by default.
 - Inspect returned evidence and relevant changes, resolve conflicts, and perform the focused validation needed for integration. The primary remains accountable for correctness and completion; a worker's success report alone is not verification.
-- Skip delegation only when the user requests solo work, the task is trivial, there is no useful independent subtask alongside primary work, or native delegation is unavailable or prohibited by higher-priority instructions. Being capable of doing the task yourself is not an exception. Do not invent busywork to justify spawning.
-- If a native Luna request fails, use the actual failure to decide whether one corrected retry is appropriate; otherwise continue authorized work and report the limitation. Do not silently substitute a different model, bypass runtime restrictions, or abandon a healthy worker because a wait interval expired.
+- Skip delegation only when the user requests solo work. Being capable of doing the task yourself is not an exception.
+- If Luna's task fails, based on the actual failure details, please select the appropriate action from the following options.
+  1. Retry after fixing the issue
+  2. Retry with a higher-tier model (`gpt-5.6-sol`)
+  3. Report the task failure to the user
 - Before finalizing a non-trivial task, check that meaningful work was delegated and its result reviewed. Briefly identify Luna's contribution, or the concrete reason delegation was not possible. Never claim delegation without an actual native tool call.
 
 ## JavaScript and TypeScript tooling
