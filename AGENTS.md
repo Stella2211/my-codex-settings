@@ -4,9 +4,9 @@
 
 This policy applies to the primary agent. A sub-agent should complete its assigned scope without recursively delegating unless the primary explicitly requests it.
 
-- For every non-trivial task with a useful independent workstream, use sub-agents with model `gpt-5.6-luna`. After the minimum orientation needed to define scope and read applicable instructions, delegate before undertaking deep investigation or substantial implementation yourself.
+- For every non-trivial task with a useful independent workstream, use sub-agents with model `gpt-5.6-luna` and reasoning effort `max`. After the minimum orientation needed to define scope and read applicable instructions, delegate before undertaking deep investigation or substantial implementation yourself.
 - The primary owns scope, priorities, architecture, tradeoffs, ambiguity resolution, integration, and final review. Delegate bounded research, code inspection, implementation within agreed boundaries, focused verification, and documentation to Luna. While Luna works, advance a complementary decision or independent workstream rather than duplicating its assignment.
-- Give each worker the objective, relevant context and files, permitted edit scope, constraints, expected deliverable, and acceptance criteria. Use the native tool's supported explicit model selection; supply self-contained context when selecting Luna requires a fresh context.
+- Give each worker the objective, relevant context and files, permitted edit scope, constraints, expected deliverable, and acceptance criteria. Use the native tool's supported explicit model and reasoning-effort selection; supply self-contained context when selecting Luna requires a fresh context.
 - Assign disjoint edit ownership. Prefer reusing a suitable existing Luna worker over spawning another. Do not ask workers to recursively create more workers by default.
 - Inspect returned evidence and relevant changes, resolve conflicts, and perform the focused validation needed for integration. The primary remains accountable for correctness and completion; a worker's success report alone is not verification.
 - Skip delegation only when the user requests solo work. Being capable of doing the task yourself is not an exception.
