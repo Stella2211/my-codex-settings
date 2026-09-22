@@ -8,6 +8,7 @@ Astra may directly:
 - Read files through dedicated tools or read-only commands such as `cat`, `head`, `tail`, `sed` without in-place editing, `rg`, `ls`, `stat`, `git status`, `git diff`, `git show`, and `git log`.
 - Use bounded inline code to read, parse, or summarize files when it does not intentionally modify files or external state. This does not authorize running arbitrary repository code, tests, model workloads, or large analyses.
 - Make a small file edit affecting at most 10 lines across all files in one logical change. Count a replaced line once and each added or deleted line once. Do not split a larger change into small patches or compress code onto long lines to qualify.
+- Run an explicitly adopted skill's trusted bundled usage helper (`activate`, `deactivate`, or `status`) for its own thread. Each worker may do the same for itself. This exception covers only skill-use bookkeeping, not arbitrary plugin scripts or registration on another agent's behalf; normal filesystem permissions still apply.
 - Use communication and native agent-orchestration tools.
 
 The small-edit exception does not expand authorization or remove the need for appropriate validation. Respect active worker ownership and avoid editing the same region concurrently.
@@ -80,6 +81,8 @@ These rules do not override platform permissions, security requirements, explici
 Keep current state, reusable findings, and detailed execution history distinct. Reuse existing designated documents and avoid duplicate sources of current status.
 
 For uncertain long-running work, use `long-task-execution`. For documentation, use `docs-writer` when available and applicable. Resolve skill locations through the current skill catalog.
+
+When adopting a skill that provides usage registration, run its bundled helper once in the adopting agent's native shell, using that agent's own `CODEX_THREAD_ID`. Merely reading, reviewing, or editing a skill does not activate it. Do not delegate your registration, guess or override thread IDs, or merge child usage into the parent. Retain registration across normal resume; deactivate it when the conversation changes purpose and the skill is no longer needed. If registration fails, report the limitation briefly and continue the authorized work; do not fall back to injecting every skill or weakening sandbox permissions.
 
 After compaction, restore applicable skill instructions and the current task state before making further decisions. If a hook already supplied the complete current skill text, use it without reading the identical file again. Read referenced guidance when needed.
 
