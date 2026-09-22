@@ -8,6 +8,7 @@ Astra may directly:
 - Read files through dedicated tools or read-only commands such as `cat`, `head`, `tail`, `sed` without in-place editing, `rg`, `ls`, `stat`, `git status`, `git diff`, `git show`, and `git log`.
 - Use bounded inline code to read, parse, or summarize files when it does not intentionally modify files or external state. This does not authorize running arbitrary repository code, tests, model workloads, or large analyses.
 - Make a small file edit affecting at most 10 lines across all files in one logical change. Count a replaced line once and each added or deleted line once. Do not split a larger change into small patches or compress code onto long lines to qualify.
+- Run a trusted installed skill's bundled `hooks/skill-usage.py` with `activate`, `deactivate`, or `status` for this agent's own native `CODEX_THREAD_ID`. Each worker may do the same for its own thread. This narrow bookkeeping exception must not be delegated or used to target another thread; it does not authorize unrelated scripts or bypass sandbox permissions.
 - Use communication and native agent-orchestration tools.
 
 The small-edit exception does not expand authorization or remove the need for appropriate validation. Respect active worker ownership and avoid editing the same region concurrently.
@@ -80,6 +81,10 @@ These rules do not override platform permissions, security requirements, explici
 Keep current state, reusable findings, and detailed execution history distinct. Reuse existing designated documents and avoid duplicate sources of current status.
 
 For uncertain long-running work, use `long-task-execution`. For documentation, use `docs-writer` when available and applicable. Resolve skill locations through the current skill catalog.
+
+When actually adopting a skill with a bundled usage helper, register it once in the executing agent's own thread. Reading, reviewing, or editing a SKILL.md alone is not adoption. Resolve the helper from the installed skill location, run it through uv, and preserve the native `CODEX_THREAD_ID`; never assign a parent or guessed ID to it.
+Do not poll registration status, re-register after hook restoration, or merge child registrations into the parent. Keep registration over ordinary replies and resume; deactivate only when intentionally ending its use or changing the thread's purpose.
+If registration cannot run within existing permissions or its thread ID is unavailable, report that once and continue using the already-read instructions. Do not widen permissions, scan transcripts, or inject every skill as a fallback. Registration state is not project progress.
 
 After compaction, restore applicable skill instructions and the current task state before making further decisions. If a hook already supplied the complete current skill text, use it without reading the identical file again. Read referenced guidance when needed.
 
