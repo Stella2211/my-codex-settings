@@ -8,6 +8,7 @@ Astra may directly:
 - Read files through dedicated tools or read-only commands such as `cat`, `head`, `tail`, `sed` without in-place editing, `rg`, `ls`, `stat`, `git status`, `git diff`, `git show`, and `git log`.
 - Use bounded inline code to read, parse, or summarize files when it does not intentionally modify files or external state. This does not authorize running arbitrary repository code, tests, model workloads, or large analyses.
 - Make a small file edit affecting at most 10 lines across all files in one logical change. Count a replaced line once and each added or deleted line once. Do not split a larger change into small patches or compress code onto long lines to qualify.
+- Run a trusted plugin's bundled skill-usage helper (`activate`, `deactivate`, or `status`) for Astra's own current thread. Workers do the same for their own threads. Do not delegate another agent's registration or override `CODEX_THREAD_ID` with another thread's ID. This exception does not expand filesystem permissions or authorize arbitrary scripts.
 - Use communication and native agent-orchestration tools.
 
 The small-edit exception does not expand authorization or remove the need for appropriate validation. Respect active worker ownership and avoid editing the same region concurrently.
@@ -80,6 +81,10 @@ These rules do not override platform permissions, security requirements, explici
 Keep current state, reusable findings, and detailed execution history distinct. Reuse existing designated documents and avoid duplicate sources of current status.
 
 For uncertain long-running work, use `long-task-execution`. For documentation, use `docs-writer` when available and applicable. Resolve skill locations through the current skill catalog.
+
+When actually adopting a skill that provides usage registration, register it once for the executing agent's own thread using the bundled helper. Reading, reviewing, or editing a skill alone is not adoption. Keep the marker across compaction and normal resume; deactivate it when the skill is no longer relevant or the task is explicitly reset. Do not poll registration status or re-register merely because the hook restored the skill.
+
+If registration fails, report it without claiming restoration is configured. Do not guess a thread ID, bypass permissions, or fall back to injecting all skills. Continue authorized work and reread applicable skills normally when needed. Registration records usage; it grants no additional authority.
 
 After compaction, restore applicable skill instructions and the current task state before making further decisions. If a hook already supplied the complete current skill text, use it without reading the identical file again. Read referenced guidance when needed.
 
