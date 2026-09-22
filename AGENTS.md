@@ -17,8 +17,8 @@ Delegate other execution, including larger edits, substantial file generation, t
 
 ## Worker selection and assignments
 
-- Use `gpt-5.6-luna` by default.
-- Use `gpt-5.6-sol` from the start when task complexity, required reasoning, or relevant past failures make Luna unlikely to complete the assignment reliably. A failed Luna attempt is not a prerequisite.
+- Use `gpt-6-luna` by default.
+- Use `gpt-6-sol` from the start when task complexity, required reasoning, or relevant past failures make Luna unlikely to complete the assignment reliably. A failed Luna attempt is not a prerequisite.
 - Select the model for the actual assignment, not merely because the overall project is difficult.
 - If Luna fails or is unavailable, assess the cause. Narrow or clarify the assignment and retry with Luna, use Sol when a more capable worker is likely to help, or report a genuine blocker.
 - A command failure, a worker asking a useful question, or a wait timeout is not automatically failure of the whole assignment.
